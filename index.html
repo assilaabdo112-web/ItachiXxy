@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ItachiXxy — Content Creator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+         :root {
+            --neon: #00ffff;
+            --neon-rgb: 0, 255, 255;
+            --bg: #03030f;
+            --card-bg: rgba(6, 6, 22, 0.95);
+            --green: #00ff78;
+        }
+        
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html,
+        body,
+        a,
+        button,
+        input,
+        [role="button"] {
+            cursor: none !important;
+        }
+        
+        body {
+            min-height: 100vh;
+            background: var(--bg);
+            font-family: 'Share Tech Mono', monospace;
+            overflow-x: hidden;
+            color: #fff;
+        }
+        /* SCANLINES — static, zero cost */
+        
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, .036) 2px, rgba(0, 0, 0, .036) 4px);
+            z-index: 1;
+            pointer-events: none;
+        }
+        /* BG VIDEO — NO filter (saturate/contrast repaints every frame) */
+        
+        #bg-video {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+            opacity: .2;
+        }
+        /* VIGNETTE — static */
+        
+        .vignette {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, transparent 42%, rgba(3, 3, 15, .88) 100%);
+            z-index: 1;
+            pointer-events: none;
+        }
+        /* GRID — background-position only = compositor thread */
+        
+        .grid {
+            position: fixed;
+            inset: 0;
+            background-image: linear-gradient(rgba(var(--neon-rgb), .02) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--neon-rgb), .02) 1px, transparent 1px);
+            background-size: 55px 55px;
+            animation: gridMove 24s linear infinite;
+            z-index: 1;
+            pointer-events: none;
+            will-change: background-position;
+        }
+        
+        @keyframes gridMove {
+            to {
+                background-position: 55px 55px;
+            }
+        }
+        /* GLOW ORBS — static, NO animation
+   (blur+animation = permanent compositor layer repainting) */
+        
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(90px);
+            opacity: .06;
+        }
+        
+        .orb-1 {
+            width: 300px;
+            height: 300px;
+            top: -50px;
+            left: -50px;
+            background: var(--neon);
+        }
+        
+        .orb-2 {
+            width: 260px;
+            height: 260px;
+            bottom: -40px;
+            right: -40px;
+            background: #ff00ff;
+        }
+        /* CORNER BRACKETS */
+        
+        .corner {
+            position: fixed;
+            width: 38px;
+            height: 38px;
+            z-index: 5;
+            pointer-events: none;
+        }
+        
+        .corner::before,
+        .corner::after {
+            content: '';
+            position: absolute;
+            background: var(--neon);
+            box-shadow: 0 0 4px var(--neon);
+            transition: background .4s;
+        }
+        
+        .corner::before {
+            width: 100%;
+            height: 2px;
+            top: 0;
+            left: 0;
+        }
+        
+        .corner::after {
+            width: 2px;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+        
+        .corner.tl {
+            top: 13px;
+            left: 13px;
+        }
+        
+        .corner.tr {
+            top: 13px;
+            right: 13px;
+            transform: rotate(90deg);
+        }
+        
+        .corner.bl {
+            bottom: 13px;
+            left: 13px;
+            transform: rotate(270deg);
+        }
+        
+        .corner.br {
+            bottom: 13px;
+            right: 13px;
+            transform: rotate(180deg);
+        }
+        /* SCAN BEAM — translateY only = compositor */
+        
+        .scan-beam {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(var(--neon-rgb), .4), transparent);
+            animation: scanBeam 8s linear infinite;
+            z-index: 3;
+            pointer-events: none;
+            opacity: .28;
+            will-change: transform;
+        }
+        
+        @keyframes scanBeam {
+            0% {
+                transform: translateY(0)
+            }
+            100% {
+                transform: translateY(100vh)
+            }
+        }
+        /* CSS PARTICLES — compositor thread, zero JS per frame */
+        
+        .particles-wrap {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+            overflow: hidden;
+        }
+        
+        .p {
+            position: absolute;
+            border-radius: 50%;
+            background: var(--neon);
+            /* NO box-shadow — 20 glowing particles is huge GPU cost */
+            opacity: 0;
+            animation: floatUp linear infinite;
+            will-change: transform, opacity;
+        }
+        
+        @keyframes floatUp {
+            0% {
+                transform: translate(0, 0);
+                opacity: 0;
+            }
+            8% {
+                opacity: .42;
+            }
+            88% {
+                opacity: .42;
+            }
+            100% {
+                transform: translate(var(--dx), var(--dy));
+                opacity: 0;
+            }
+        }
+        /* CURSOR — will-change:transform, NO box-shadow (repaints every mousemove) */
+        
+        #cursor-dot {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--neon);
+            pointer-events: none;
+            z-index: 99999;
+            will-change: transform;
+            transition: background .3s, width .1s, height .1s;
+        }
+        
+        #cursor-ring {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(var(--neon-rgb), .4);
+            pointer-events: none;
+            z-index: 99998;
+            will-change: transform;
+            transition: border-color .3s, width .12s, height .12s, opacity .12s;
+        }
+        
+        body.clicking #cursor-dot {
+            width: 4px;
+            height: 4px;
+        }
+        
+        body.clicking #cursor-ring {
+            width: 36px;
+            height: 36px;
+            opacity: .22;
+        }
+        /* COLOR PICKER */
+        
+        .color-picker {
+            position: fixed;
+            top: 50%;
+            left: 13px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 200;
+        }
+        
+        .color-btn {
+            width: 19px;
+            height: 19px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, .18);
+            outline: none;
+            transition: transform .18s, border-color .18s;
+            cursor: none !important;
+        }
+        
+        .color-btn:hover {
+            transform: scale(1.3);
+            border-color: #fff;
+        }
+        
+        .color-btn.active {
+            border-color: #fff;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, .18);
+        }
+        /* CONTROLS — NO backdrop-filter (forces composite layer) */
+        
+        .controls {
+            position: fixed;
+            top: 13px;
+            right: 13px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 200;
+        }
+        
+        .ctrl-btn {
+            background: rgba(0, 0, 0, .88);
+            color: var(--neon);
+            border: 1px solid rgba(var(--neon-rgb), .24);
+            border-radius: 7px;
+            padding: 6px 12px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            outline: none;
+            transition: background .2s, border-color .2s, color .3s;
+            cursor: none !important;
+        }
+        
+        .ctrl-btn:hover {
+            background: rgba(var(--neon-rgb), .07);
+            border-color: var(--neon);
+        }
+        
+        .ctrl-btn:active {
+            transform: scale(.96);
+        }
+        /* PAGE WRAP */
+        
+        .page-wrap {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 52px 20px 46px;
+        }
+        /* PROFILE CARD — NO backdrop-filter (biggest single lag source) */
+        
+        .profile-card {
+            position: relative;
+            background: var(--card-bg);
+            border: 1px solid rgba(var(--neon-rgb), .2);
+            border-radius: 22px;
+            padding: 36px 34px 32px;
+            width: min(490px, 94vw);
+            text-align: center;
+            box-shadow: 0 0 28px rgba(var(--neon-rgb), .055), 0 16px 48px rgba(0, 0, 0, .82);
+            animation: cardIn .8s cubic-bezier(.16, 1, .3, 1) both;
+            transition: transform .07s linear, opacity .35s;
+            will-change: transform;
+        }
+        
+        .profile-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 14%;
+            right: 14%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(var(--neon-rgb), .65), transparent);
+            border-radius: 50%;
+            transition: background .4s;
+        }
+        /* border pulse — opacity only = cheapest animation possible */
+        
+        .profile-card::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 23px;
+            border: 1px solid rgba(var(--neon-rgb), .15);
+            animation: borderPulse 4.5s ease-in-out infinite;
+            pointer-events: none;
+        }
+        
+        @keyframes borderPulse {
+            0%,
+            100% {
+                opacity: 0
+            }
+            50% {
+                opacity: 1
+            }
+        }
+        
+        @keyframes cardIn {
+            from {
+                opacity: 0;
+                transform: translateY(22px) scale(.96);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .profile-card.hidden {
+            opacity: 0 !important;
+            transform: scale(.95) translateY(12px) !important;
+            pointer-events: none !important;
+            animation: none !important;
+        }
+        /* LOGO — pure SVG vectors, NO SVG filters, NO CSS filter/drop-shadow */
+        
+        .logo-wrap {
+            margin-bottom: 18px;
+            animation: cardIn .8s .04s both;
+        }
+        
+        .site-logo {
+            width: 100%;
+            max-width: 310px;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+        /* AVATAR */
+        
+        .avatar-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 152px;
+            height: 152px;
+            margin-bottom: 16px;
+        }
+        
+        .avatar-wrap img {
+            width: 102px;
+            height: 102px;
+            border-radius: 50%;
+            border: 2px solid var(--neon);
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 0 16px rgba(var(--neon-rgb), .38);
+            transition: transform .4s cubic-bezier(.34, 1.56, .64, 1), box-shadow .4s, border-color .3s;
+            display: block;
+            animation: cardIn .8s .12s both;
+            object-fit: cover;
+            cursor: none !important;
+        }
+        
+        .avatar-wrap img:hover {
+            transform: scale(1.07) rotate(4deg);
+            box-shadow: 0 0 26px var(--neon);
+        }
+        /* rings — transform only, NO box-shadow */
+        
+        .ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            border-radius: 50%;
+            border: 1px solid rgba(var(--neon-rgb), .28);
+            animation: spinRing linear infinite;
+            will-change: transform;
+        }
+        
+        .ring:nth-child(1) {
+            width: 116px;
+            height: 116px;
+            margin: -58px 0 0 -58px;
+            animation-duration: 7s;
+        }
+        
+        .ring:nth-child(2) {
+            width: 133px;
+            height: 133px;
+            margin: -66.5px 0 0 -66.5px;
+            animation-duration: 11s;
+            animation-direction: reverse;
+            opacity: .32;
+            border-style: dashed;
+        }
+        
+        .ring:nth-child(3) {
+            width: 150px;
+            height: 150px;
+            margin: -75px 0 0 -75px;
+            animation-duration: 18s;
+            opacity: .16;
+        }
+        
+        @keyframes spinRing {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        /* GLITCH USERNAME — text-shadow removed from base state (repaints on every glitch frame) */
+        
+        .glitch-wrap {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 8px;
+            animation: cardIn .8s .2s both;
+        }
+        
+        h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(20px, 5vw, 27px);
+            font-weight: 900;
+            color: var(--neon);
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            transition: color .3s;
+            position: relative;
+        }
+        
+        h1::before,
+        h1::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            opacity: 0;
+        }
+        
+        h1::before {
+            animation: glitch1 5s infinite;
+            color: #ff00ff;
+            clip-path: polygon(0 28%, 100% 28%, 100% 54%, 0 54%);
+        }
+        
+        h1::after {
+            animation: glitch2 5s infinite;
+            color: #00ffff;
+            clip-path: polygon(0 58%, 100% 58%, 100% 80%, 0 80%);
+        }
+        
+        @keyframes glitch1 {
+            0%,
+            91%,
+            100% {
+                opacity: 0;
+                transform: translateX(0);
+            }
+            92% {
+                opacity: .85;
+                transform: translateX(-3px);
+            }
+            94% {
+                opacity: .85;
+                transform: translateX(3px);
+            }
+            96% {
+                opacity: 0;
+            }
+        }
+        
+        @keyframes glitch2 {
+            0%,
+            89%,
+            100% {
+                opacity: 0;
+                transform: translateX(0);
+            }
+            90% {
+                opacity: .85;
+                transform: translateX(3px);
+            }
+            92% {
+                opacity: .85;
+                transform: translateX(-3px);
+            }
+            94% {
+                opacity: 0;
+            }
+        }
+        /* STATUS BADGE */
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 255, 100, .05);
+            border: 1px solid rgba(0, 255, 100, .18);
+            border-radius: 16px;
+            padding: 4px 12px;
+            font-size: 10px;
+            color: var(--green);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 9px;
+            animation: cardIn .8s .28s both;
+        }
+        
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--green);
+            border-radius: 50%;
+            flex-shrink: 0;
+            animation: blinkDot 2.2s ease-in-out infinite;
+        }
+        
+        @keyframes blinkDot {
+            0%,
+            100% {
+                opacity: 1
+            }
+            50% {
+                opacity: .08
+            }
+        }
+        /* BIO */
+        
+        .bio {
+            font-size: 11px;
+            color: rgba(255, 255, 255, .4);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            animation: cardIn .8s .34s both;
+            min-height: 17px;
+        }
+        
+        .cursor-blink {
+            animation: cursorBlink .7s step-end infinite;
+        }
+        
+        @keyframes cursorBlink {
+            0%,
+            100% {
+                opacity: 1
+            }
+            50% {
+                opacity: 0
+            }
+        }
+        
+        .divider {
+            width: 48%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(var(--neon-rgb), .28), transparent);
+            margin: 0 auto 20px;
+            animation: cardIn .8s .36s both;
+            transition: background .4s;
+        }
+        /* SOCIAL LINKS */
+        
+        .social-links {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 22px;
+            animation: cardIn .8s .41s both;
+        }
+        
+        .social-links a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            text-decoration: none;
+            color: var(--neon);
+            border: 1px solid rgba(var(--neon-rgb), .2);
+            border-radius: 9px;
+            padding: 11px 10px;
+            font-family: 'Orbitron', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            background: rgba(var(--neon-rgb), .016);
+            position: relative;
+            overflow: hidden;
+            transition: color .22s, border-color .22s, transform .18s;
+            cursor: none !important;
+        }
+        
+        .link-bg {
+            position: absolute;
+            inset: 0;
+            background: var(--neon);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform .22s cubic-bezier(.4, 0, .2, 1), background .3s;
+        }
+        
+        .social-links a:hover .link-bg {
+            transform: scaleX(1);
+        }
+        
+        .social-links a:hover {
+            color: #000;
+            border-color: var(--neon);
+            transform: translateY(-2px);
+        }
+        
+        .social-links a span,
+        .social-links a .icon {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .social-links a .icon {
+            font-size: 14px;
+        }
+        /* STATS */
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: rgba(var(--neon-rgb), .05);
+            border: 1px solid rgba(var(--neon-rgb), .08);
+            border-radius: 11px;
+            overflow: hidden;
+            animation: cardIn .8s .5s both;
+            margin-bottom: 18px;
+        }
+        
+        .stat {
+            background: rgba(4, 4, 18, .84);
+            padding: 15px 5px;
+            opacity: 0;
+            transform: translateY(7px);
+            transition: opacity .42s, transform .42s, background .18s;
+        }
+        
+        .stat:hover {
+            background: rgba(var(--neon-rgb), .036);
+        }
+        
+        .stat.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .stat h2 {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(14px, 3.5vw, 19px);
+            font-weight: 900;
+            color: var(--neon);
+            text-shadow: 0 0 6px rgba(var(--neon-rgb), .5);
+            margin-bottom: 3px;
+            transition: color .3s;
+        }
+        
+        .stat p {
+            font-size: 9px;
+            color: rgba(255, 255, 255, .26);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        /* VISUALIZER — CSS only, NO will-change per bar (26 compositor layers = lag) */
+        
+        .visualizer {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 3px;
+            height: 24px;
+            animation: cardIn .8s .56s both;
+        }
+        
+        .bar {
+            width: 3px;
+            border-radius: 2px 2px 0 0;
+            background: var(--neon);
+            transition: background .3s;
+            animation: barDance var(--dur, .7s) ease-in-out infinite alternate;
+        }
+        
+        @keyframes barDance {
+            from {
+                height: 3px;
+                opacity: .38;
+            }
+            to {
+                height: var(--max, 18px);
+                opacity: .88;
+            }
+        }
+        /* BADGES */
+        
+        .badges {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+            animation: cardIn .8s .61s both;
+        }
+        
+        .badge {
+            font-size: 9px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 5px;
+            border: 1px solid rgba(var(--neon-rgb), .2);
+            color: rgba(var(--neon-rgb), .68);
+            background: rgba(var(--neon-rgb), .032);
+            transition: background .22s, border-color .22s;
+        }
+        
+        .badge:hover {
+            background: rgba(var(--neon-rgb), .08);
+            border-color: var(--neon);
+        }
+        /* TICKER — transform only */
+        
+        .ticker-wrap {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 27px;
+            background: rgba(0, 0, 0, .84);
+            border-top: 1px solid rgba(var(--neon-rgb), .12);
+            overflow: hidden;
+            z-index: 150;
+        }
+        
+        .ticker {
+            display: flex;
+            align-items: center;
+            height: 100%;
+            white-space: nowrap;
+            animation: tickerScroll 30s linear infinite;
+            font-size: 10px;
+            color: rgba(var(--neon-rgb), .58);
+            letter-spacing: 2px;
+            will-change: transform;
+        }
+        
+        .ticker span {
+            margin: 0 30px;
+        }
+        
+        .ticker .sep {
+            color: var(--neon);
+            margin: 0 5px;
+        }
+        
+        @keyframes tickerScroll {
+            from {
+                transform: translateX(0)
+            }
+            to {
+                transform: translateX(-50%)
+            }
+        }
+        /* FPS COUNTER */
+        
+        #fps-counter {
+            position: fixed;
+            bottom: 32px;
+            right: 9px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 9px;
+            color: rgba(var(--neon-rgb), .28);
+            letter-spacing: 2px;
+            z-index: 300;
+            pointer-events: none;
+        }
+        
+        @media (max-width:480px) {
+            .profile-card {
+                padding: 26px 15px 22px;
+            }
+            .controls {
+                top: 7px;
+                right: 7px;
+            }
+            .color-picker {
+                left: 7px;
+            }
+        }
+        
+        @media (prefers-reduced-motion:reduce) {
+            *,
+            *::before,
+            *::after {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <video autoplay muted loop playsinline id="bg-video" preload="metadata">
+  <source src="videos/Itachi Uchiha - Bloody Mary [Edit⧸AMV].mp4" type="video/mp4">
+</video>
+
+    <div class="vignette"></div>
+    <div class="grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="scan-beam"></div>
+
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+
+    <div class="particles-wrap" id="particles-wrap"></div>
+    <div id="cursor-dot"></div>
+    <div id="cursor-ring"></div>
+
+    <div class="color-picker">
+        <button class="color-btn active" style="background:#00ffff" data-color="#00ffff" data-rgb="0,255,255" title="Cyan"></button>
+        <button class="color-btn" style="background:#ff00ff" data-color="#ff00ff" data-rgb="255,0,255" title="Magenta"></button>
+        <button class="color-btn" style="background:#00ff78" data-color="#00ff78" data-rgb="0,255,120" title="Green"></button>
+        <button class="color-btn" style="background:#ff9900" data-color="#ff9900" data-rgb="255,153,0" title="Orange"></button>
+        <button class="color-btn" style="background:#ff2255" data-color="#ff2255" data-rgb="255,34,85" title="Red"></button>
+        <button class="color-btn" style="background:#c77dff" data-color="#c77dff" data-rgb="199,125,255" title="Purple"></button>
+        <button class="color-btn" style="background:#ffffff" data-color="#ffffff" data-rgb="255,255,255" title="White"></button>
+    </div>
+
+    <div class="controls">
+        <button class="ctrl-btn" id="play-sound">🎵 UNMUTE VIDEO</button>
+        <button class="ctrl-btn" id="toggle-sound">🔇 TOGGLE MUTE</button>
+        <button class="ctrl-btn" id="toggle-profile">👁 HIDE CARD</button>
+    </div>
+
+    <div id="fps-counter">FPS --</div>
+
+    <div class="page-wrap">
+        <div class="profile-card" id="profileCard">
+
+            <!-- LOGO: pure SVG vectors only, zero filters -->
+            <div class="logo-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 310 66" class="site-logo" aria-label="ItachiXxy">
+        <defs>
+          <linearGradient id="gBolt" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#fff"/>
+            <stop offset="50%" stop-color="#00ffff"/>
+            <stop offset="100%" stop-color="#0099ff"/>
+          </linearGradient>
+          <linearGradient id="gXxy" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#00ffff"/>
+            <stop offset="100%" stop-color="#0077ff"/>
+          </linearGradient>
+          <linearGradient id="gItachi" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#fff"/>
+            <stop offset="100%" stop-color="#c5f5ff"/>
+          </linearGradient>
+        </defs>
+        <polyline points="0,15 0,3 12,0 28,0"         fill="none" stroke="#00ffff" stroke-width="1.5" opacity="0.65"/>
+        <polyline points="310,15 310,3 298,0 282,0"    fill="none" stroke="#00ffff" stroke-width="1.5" opacity="0.65"/>
+        <polyline points="0,51 0,63 12,66 28,66"       fill="none" stroke="#00ffff" stroke-width="1.5" opacity="0.65"/>
+        <polyline points="310,51 310,63 298,66 282,66" fill="none" stroke="#00ffff" stroke-width="1.5" opacity="0.65"/>
+        <polygon points="44,9 31,39 43,39 34,58 56,27 44,27 56,9" fill="url(#gBolt)"/>
+        <text x="67" y="44" font-family="Orbitron,monospace" font-size="32" font-weight="900"
+              letter-spacing="1" fill="url(#gItachi)">ITACHI</text>
+        <text x="228" y="44" font-family="Orbitron,monospace" font-size="32" font-weight="900"
+              fill="url(#gXxy)">Xxy</text>
+        <line x1="67" y1="49" x2="298" y2="49" stroke="rgba(0,255,255,0.14)" stroke-width="1"/>
+        <text x="182" y="61" font-family="'Share Tech Mono',monospace" font-size="7.5" letter-spacing="3.5"
+              fill="rgba(0,255,255,0.45)" text-anchor="middle">CONTENT CREATOR  ◆  STREAMER</text>
+      </svg>
+            </div>
+
+            <div class="avatar-wrap">
+                <div class="ring"></div>
+                <div class="ring"></div>
+                <div class="ring"></div>
+                <img src="https://i.pinimg.com/1200x/1a/21/bd/1a21bd424e6c1f3df08f924cdc39b19a.jpg" alt="ItachiXxy" loading="eager" fetchpriority="high">
+            </div>
+
+            <div class="glitch-wrap">
+                <h1 data-text="ItachiXxy">ItachiXxy</h1>
+            </div>
+
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                <span>● Online</span>
+                <span style="opacity:.28;margin:0 4px">|</span>Content Creator
+            </div>
+
+            <p class="bio" id="typing-bio"></p>
+            <div class="divider"></div>
+
+            <div class="social-links">
+                <a href="" target="_blank" rel="noopener">
+                    <div class="link-bg"></div>
+                    <span class="icon">📸</span><span>Instagram</span>
+                </a>
+                <a href="https://discord.gg/KbZpnKA4tk" target="_blank" rel="noopener">
+                    <div class="link-bg"></div>
+                    <span class="icon">🎮</span><span>SkyLine</span>
+                </a>
+                <a href="" target="_blank" rel="noopener">
+                    <div class="link-bg"></div>
+                    <span class="icon">📘</span><span>Facebook</span>
+                </a>
+                <a href="" target="_blank" rel="noopener">
+                    <div class="link-bg"></div>
+                    <span class="icon">▶</span><span>YouTube</span>
+                </a>
+            </div>
+
+            <div class="stats">
+                <div class="stat" data-target="8">
+                    <h2>0</h2>
+                    <p>Games</p>
+                </div>
+                <div class="stat" data-target="83">
+                    <h2>0</h2>
+                    <p>Points</p>
+                </div>
+                <div class="stat" data-target="130000">
+                    <h2>0</h2>
+                    <p>Followers</p>
+                </div>
+            </div>
+
+            <div class="visualizer" id="visualizer"></div>
+
+            <div class="badges">
+                <div class="badge">🎬 Creator</div>
+                <div class="badge">🎮 Gamer</div>
+                <div class="badge">🔥 Live</div>
+                <div class="badge">⚡ Daily</div>
+                <div class="badge">🏆 Pro</div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="ticker-wrap">
+        <div class="ticker">
+            <span>ItachiXxy</span><span class="sep">◆</span>
+            <span>Content Creator</span><span class="sep">◆</span>
+            <span>Gamer</span><span class="sep">◆</span>
+            <span>Follow for daily content</span><span class="sep">◆</span>
+            <span>Live every week</span><span class="sep">◆</span>
+            <span>130K Followers</span><span class="sep">◆</span>
+            <span>Join SkyLine Discord</span><span class="sep">◆</span>
+            <span>Creating the future, one frame at a time</span><span class="sep">◆</span>
+            <span>ItachiXxy</span><span class="sep">◆</span>
+            <span>Content Creator</span><span class="sep">◆</span>
+            <span>Gamer</span><span class="sep">◆</span>
+            <span>Follow for daily content</span><span class="sep">◆</span>
+            <span>Live every week</span><span class="sep">◆</span>
+            <span>130K Followers</span><span class="sep">◆</span>
+            <span>Join SkyLine Discord</span><span class="sep">◆</span>
+            <span>Creating the future, one frame at a time</span><span class="sep">◆</span>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            /* ═══════════════════════════════════════════════
+               1. CURSOR
+               Key fixes:
+               - Event-driven rAF (not infinite loop)
+               - Stops scheduling when ring catches up = IDLE
+               - Zero box-shadow writes (was repainting every frame)
+            ═══════════════════════════════════════════════ */
+            var dot = document.getElementById('cursor-dot');
+            var ring = document.getElementById('cursor-ring');
+            var mX = -300,
+                mY = -300,
+                rX = -300,
+                rY = -300,
+                rafPending = false;
+
+            document.addEventListener('mousemove', function(e) {
+                mX = e.clientX;
+                mY = e.clientY;
+                if (!rafPending) {
+                    rafPending = true;
+                    requestAnimationFrame(drawCursor);
+                }
+            }, {
+                passive: true
+            });
+            document.addEventListener('mouseleave', function() {
+                mX = -300;
+                mY = -300;
+            });
+            document.addEventListener('mousedown', function() {
+                document.body.classList.add('clicking');
+            });
+            document.addEventListener('mouseup', function() {
+                document.body.classList.remove('clicking');
+            });
+
+            function drawCursor() {
+                dot.style.transform = 'translate(' + (mX - 3.5) + 'px,' + (mY - 3.5) + 'px)';
+                rX += (mX - rX) * 0.15;
+                rY += (mY - rY) * 0.15;
+                ring.style.transform = 'translate(' + (rX - 13) + 'px,' + (rY - 13) + 'px)';
+                rafPending = false;
+                if (Math.abs(mX - rX) > 0.3 || Math.abs(mY - rY) > 0.3) {
+                    rafPending = true;
+                    requestAnimationFrame(drawCursor);
+                }
+            }
+            requestAnimationFrame(drawCursor);
+
+            /* ═══════════════════════════════════════════════
+               2. CSS PARTICLES
+               Key fixes:
+               - DocumentFragment = 1 DOM insert instead of 20
+               - Reduced to 20 particles
+               - CSS handles all animation (zero JS per frame)
+            ═══════════════════════════════════════════════ */
+            (function() {
+                var wrap = document.getElementById('particles-wrap');
+                var frag = document.createDocumentFragment();
+                var H = window.innerHeight;
+                for (var i = 0; i < 20; i++) {
+                    var sz = (1.5 + Math.random() * 1.8).toFixed(1);
+                    var lft = (Math.random() * 100).toFixed(1);
+                    var dx = ((Math.random() - 0.5) * 42).toFixed(1);
+                    var dur = (9 + Math.random() * 8).toFixed(1);
+                    var dly = (Math.random() * parseFloat(dur)).toFixed(1);
+                    var el = document.createElement('div');
+                    el.className = 'p';
+                    el.style.cssText = 'width:' + sz + 'px;height:' + sz + 'px;left:' + lft + '%;bottom:0;' +
+                        '--dx:' + dx + 'px;--dy:' + (-(H + 20)) + 'px;' +
+                        'animation-duration:' + dur + 's;animation-delay:-' + dly + 's';
+                    frag.appendChild(el);
+                }
+                wrap.appendChild(frag);
+            }());
+
+            /* ═══════════════════════════════════════════════
+               3. CARD TILT
+               Key fixes:
+               - Caches card center once (no layout read per frame)
+               - rAF-gated: max 1 transform write per frame
+            ═══════════════════════════════════════════════ */
+            var card = document.getElementById('profileCard');
+            var cardHidden = false,
+                tiltPending = false;
+            var tRx = 0,
+                tRy = 0,
+                cX = 0,
+                cY = 0;
+
+            function cacheRect() {
+                var r = card.getBoundingClientRect();
+                cX = r.left + r.width / 2;
+                cY = r.top + r.height / 2;
+            }
+            cacheRect();
+            window.addEventListener('resize', cacheRect, {
+                passive: true
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (cardHidden) return;
+                tRx = -((e.clientY - cY) / (window.innerHeight / 2)) * 5;
+                tRy = ((e.clientX - cX) / (window.innerWidth / 2)) * 5;
+                if (!tiltPending) {
+                    tiltPending = true;
+                    requestAnimationFrame(applyTilt);
+                }
+            }, {
+                passive: true
+            });
+            document.addEventListener('mouseleave', function() {
+                tRx = 0;
+                tRy = 0;
+                if (!cardHidden) card.style.transform = '';
+            });
+
+            function applyTilt() {
+                card.style.transform = 'perspective(900px) rotateX(' + tRx.toFixed(2) + 'deg) rotateY(' + tRy.toFixed(2) + 'deg)';
+                tiltPending = false;
+            }
+
+            /* ═══════════════════════════════════════════════
+               4. VISUALIZER — DocumentFragment batch insert
+            ═══════════════════════════════════════════════ */
+            (function() {
+                var viz = document.getElementById('visualizer');
+                var frag = document.createDocumentFragment();
+                [8, 14, 20, 25, 21, 17, 23, 19, 15, 21, 17, 13, 23, 19, 15, 11, 19, 25, 17, 13, 9, 17, 21, 15, 11, 19].forEach(function(h) {
+                    var b = document.createElement('div');
+                    b.className = 'bar';
+                    b.style.setProperty('--dur', (0.45 + Math.random() * 0.58).toFixed(2) + 's');
+                    b.style.setProperty('--max', h + 'px');
+                    b.style.animationDelay = (Math.random() * 0.5).toFixed(2) + 's';
+                    frag.appendChild(b);
+                });
+                viz.appendChild(frag);
+            }());
+
+            /* ═══════════════════════════════════════════════
+               5. TYPING BIO
+            ═══════════════════════════════════════════════ */
+            var bioEl = document.getElementById('typing-bio');
+            var bioText = 'Creating the future, one frame at a time';
+            var idx = 0;
+
+            function typeChar() {
+                if (idx <= bioText.length) {
+                    bioEl.innerHTML = bioText.slice(0, idx) + (idx < bioText.length ? '<span class="cursor-blink">&#x258c;</span>' : '');
+                    idx++;
+                    setTimeout(typeChar, 62 + Math.random() * 36);
+                }
+            }
+            setTimeout(typeChar, 700);
+
+            /* ═══════════════════════════════════════════════
+               6. COLOR PICKER — all writes batched in rAF
+            ═══════════════════════════════════════════════ */
+            document.querySelectorAll('.color-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var color = btn.dataset.color,
+                        rgb = btn.dataset.rgb;
+                    requestAnimationFrame(function() {
+                        document.querySelectorAll('.color-btn').forEach(function(b) {
+                            b.classList.remove('active');
+                        });
+                        btn.classList.add('active');
+                        var r = document.documentElement;
+                        r.style.setProperty('--neon', color);
+                        r.style.setProperty('--neon-rgb', rgb);
+                        dot.style.background = color;
+                        ring.style.borderColor = 'rgba(' + rgb + ',0.4)';
+                        cacheRect();
+                    });
+                });
+            });
+
+            /* ═══════════════════════════════════════════════
+               7. VIDEO CONTROLS
+            ═══════════════════════════════════════════════ */
+            var video = document.getElementById('bg-video');
+            var playBtn = document.getElementById('play-sound');
+            var muteBtn = document.getElementById('toggle-sound');
+            var hideBtn = document.getElementById('toggle-profile');
+
+            playBtn.addEventListener('click', function() {
+                video.muted = false;
+                video.play()
+                    .then(function() {
+                        playBtn.textContent = '✅ SOUND ON';
+                    })
+                    .catch(function() {
+                        playBtn.textContent = '⚠ BLOCKED';
+                    });
+            });
+            muteBtn.addEventListener('click', function() {
+                video.muted = !video.muted;
+                muteBtn.textContent = video.muted ? '🔇 MUTED' : '🔊 SOUND ON';
+                if (!video.muted) video.play().catch(function() {});
+            });
+            hideBtn.addEventListener('click', function() {
+                cardHidden = !cardHidden;
+                card.classList.toggle('hidden', cardHidden);
+                hideBtn.textContent = cardHidden ? '👁 SHOW CARD' : '👁 HIDE CARD';
+                if (!cardHidden) {
+                    card.style.transform = '';
+                    cacheRect();
+                }
+            });
+
+            /* ═══════════════════════════════════════════════
+               8. STATS COUNT-UP — IntersectionObserver, fires once
+            ═══════════════════════════════════════════════ */
+            function countUp(el, target) {
+                var h2 = el.querySelector('h2');
+                if (!target) {
+                    h2.textContent = '0';
+                    return;
+                }
+                var count = 0,
+                    step = Math.max(1, Math.ceil(target / 80));
+                var iv = setInterval(function() {
+                    count = Math.min(count + step, target);
+                    h2.textContent = target >= 10000 ? (count / 1000).toFixed(count < 1000 ? 0 : 1) + 'K' : count;
+                    if (count >= target) clearInterval(iv);
+                }, 18);
+            }
+            var statsEl = document.querySelector('.stats'),
+                statsStarted = false;
+
+            function triggerStats() {
+                if (statsStarted) return;
+                statsStarted = true;
+                document.querySelectorAll('.stat').forEach(function(s, i) {
+                    setTimeout(function() {
+                        s.classList.add('show');
+                        countUp(s, parseInt(s.dataset.target, 10) || 0);
+                    }, i * 270);
+                });
+            }
+            if ('IntersectionObserver' in window) {
+                var obs = new IntersectionObserver(function(e) {
+                    if (e[0].isIntersecting) {
+                        triggerStats();
+                        obs.disconnect();
+                    }
+                }, {
+                    threshold: 0.2
+                });
+                obs.observe(statsEl);
+            }
+            setTimeout(function() {
+                if (statsEl.getBoundingClientRect().top < window.innerHeight) triggerStats();
+            }, 600);
+
+            /* ═══════════════════════════════════════════════
+               9. FPS COUNTER — DOM write once per second only
+            ═══════════════════════════════════════════════ */
+            var fpsEl = document.getElementById('fps-counter');
+            var fpsLast = performance.now(),
+                fpsCount = 0;
+            (function fpsLoop(ts) {
+                fpsCount++;
+                if (ts - fpsLast >= 1000) {
+                    fpsEl.textContent = 'FPS ' + fpsCount;
+                    fpsCount = 0;
+                    fpsLast = ts;
+                }
+                requestAnimationFrame(fpsLoop);
+            }(performance.now()));
+
+        }());
+    </script>
+</body>
+
+</html>
